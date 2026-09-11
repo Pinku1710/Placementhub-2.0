@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         Role          @default(STUDENT)
+  applications Application[]
+  interviews   Interview[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  company        String
+  role           String
+  location       String?
+  jobUrl         String?
+  status         ApplicationStatus @default(APPLIED)
+  appliedDate    DateTime          @default(now())
+  deadline       DateTime?
+  notes          String?
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviews     Interview[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, appliedDate])
+  @@index([company])
+}
+
+model Interview {
+  id            String       @id @default(cuid())
+  round         String
+  scheduledAt   DateTime
+  mode          String?
+  meetingUrl    String?
+  notes         String?
+  applicationId String
+  userId        String
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, scheduledAt])
+}
